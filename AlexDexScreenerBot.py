@@ -116,7 +116,7 @@ class DexScreenerBot:
             # Use the search endpoint with a broad query (e.g., "SOL" for Solana pairs)
             # Adjust the query based on your target blockchain
             ##TODO add search query to config file
-            response = requests.get(f"{self.base_url}/search?q=SOL", timeout=10)
+            response = requests.get(f"https://api.dexscreener.com//token-profiles/latest/v1", timeout=10)
         
             # Check response status
             if response.status_code == 404:
@@ -165,7 +165,7 @@ class DexScreenerBot:
             response = requests.get(f"{self.rugcheck_url}/{pair_address}/report", headers=headers)
             response.raise_for_status()
             data = response.json()
-            is_good = data.get("score", "").lower() == "good"
+            is_good = data.get("score", "") 
             is_bundle = data.get("topHolders", {}).get("bundledSupply", False)
             return is_good, is_bundle
         except requests.RequestException as e:
