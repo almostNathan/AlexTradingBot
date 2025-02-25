@@ -10,7 +10,7 @@ import telegram # Requires 'python-telegram-bot' package
 
 class DexScreenerBot:
     def __init__(self, config_file: str = "config.ini"):
-        self.base_url = "https://api.dexscreener.com/latest/dex"
+        self.get_recent_tokens_url = "https://api.dexscreener.com/latest/dex"
         self.rugcheck_url = "https://api.rugcheck.xyz/v1/tokens"
         self.pocket_universe_url = "https://api.pocketuniverse.app"
         self.db_path = "dexscreener_data.db"
@@ -110,6 +110,35 @@ class DexScreenerBot:
             print(error_message)
             return False
 
+    def fetch_new_tokens(self) -> List[Dict]:
+        try:
+            response = requests.get(self.get_recent_tokens_url)
+
+            # Check response status
+            if response.status_code == 404:
+                print("Error: API endpoint not found. Check DexScreener API documentation for updates.")
+                return []
+            elif response.status_code != 200:
+                print(f"Error fetching new pairs: HTTP {response.status_code} - {response.text}")
+                return []
+            
+            return response.json()
+
+        except requests.RequestException as e:
+            print(f"Error fetching new pairs: {e}")
+            return []
+        except ValueError as e:
+            print(f"Error parsing JSON response: {e}")
+            return []
+
+    def fetch_token_data(self, token) -> Dict:
+        chain_id = token['chainId']
+        token_address = token['tokenAddress']
+
+
+    ##
+    ##      UNUSED
+    ##
     def fetch_new_pairs(self) -> List[Dict]:
         """Fetch newly created pairs from DexScreener"""
         try:
@@ -148,6 +177,9 @@ class DexScreenerBot:
             print(f"Error parsing JSON response: {e}")
             return []
         
+    ##
+    ##Unused
+    ##
     def fetch_pair_data(self, chain_id,  pair_address: str) -> Optional[Dict]:
         """Fetch detailed data for a specific pair"""
         try:
@@ -325,11 +357,9 @@ class DexScreenerBot:
         """Main bot loop"""
         while True:
             print(f"Starting analysis at {datetime.now()}")
-            new_pairs = self.fetch_new_pairs()
-            for pair in new_pairs[:50]:
-                detailed_data = self.fetch_pair_data(pair['chainId'], pair["pairAddress"])
-                if detailed_data:
-                    self.trade_and_notify(detailed_data)
+            new_tokens = self.fetch_new_tokens()
+            for token in new_tokens[:50]:
+                self.trade_and_notify(token)
 
             self.detect_patterns()
             print(f"Sleeping for {interval} seconds...")
